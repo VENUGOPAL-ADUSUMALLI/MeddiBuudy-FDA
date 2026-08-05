@@ -1,6 +1,7 @@
 import type { Medicine, MedicineLookupResult, MedicineSummary } from "@/types/medicine";
 import { slugify } from "@/lib/slug";
 import { cleanupLabelText } from "@/lib/labelText";
+import { getDrugSynonym, SynonymMatch } from "@/lib/synonyms";
 
 const OPENFDA_BASE_URL = "https://api.fda.gov/drug/label.json";
 const REQUEST_TIMEOUT_MS = 8000;
@@ -18,7 +19,7 @@ interface OpenFdaLabelResult {
     route?: string[];
     product_ndc?: string[];
   };
-  dosage_form?: string; // not a real openFDA top-level field but kept optional for forward-compat
+  dosage_form?: string;
 }
 
 interface OpenFdaResponse {
@@ -52,7 +53,6 @@ async function fetchOpenFda(
   }
 
   if (response.status === 404) {
-    // openFDA returns 404 for zero-match searches rather than an empty results array
     return { results: [], total: 0 };
   }
 
@@ -73,8 +73,6 @@ function toSummary(result: OpenFdaLabelResult): MedicineSummary {
   const manufacturer = firstOrUndefined(result.openfda?.manufacturer_name);
   const route = firstOrUndefined(result.openfda?.route);
   const productNdc = firstOrUndefined(result.openfda?.product_ndc);
-  // Prefer product NDC for uniqueness; fall back to manufacturer+route+brandName
-  // for the rare record missing an NDC, so every slug is still guaranteed unique.
   const uniqueKey = productNdc ?? `${manufacturer ?? ""}|${route ?? ""}|${brandName}`;
 
   return {
@@ -104,60 +102,44 @@ export interface SearchPage {
   results: MedicineSummary[];
   total: number;
   nextSkip: number | null;
+  synonymMatch?: SynonymMatch | null;
 }
 
 /**
- * Searches openFDA by brand name OR generic name, one page at a time.
- * Never falls back to guessing a medicine when there is no direct name match.
+ * Searches openFDA by brand name OR generic name, with automatic Indian ↔ US synonym resolution.
  */
 export async function searchMedicines(query: string, skip: number = 0): Promise<SearchPage> {
   const trimmed = query.trim();
   if (!trimmed) return { results: [], total: 0, nextSkip: null };
 
-  const escaped = trimmed.replace(/"/g, '\\"');
-  const searchExpression = `openfda.brand_name:"${escaped}" OR openfda.generic_name:"${escaped}"`;
+  const synonym = getDrugSynonym(trimmed);
+  const escapedQuery = trimmed.replace(/"/g, '\\"');
+
+  let searchExpression = `openfda.brand_name:"${escapedQuery}" OR openfda.generic_name:"${escapedQuery}"`;
+
+  // If a synonym exists (e.g. Paracetamol -> Acetaminophen), expand search
+  if (synonym) {
+    const escapedMapped = synonym.mappedTerm.replace(/"/g, '\\"');
+    searchExpression = `(${searchExpression}) OR (openfda.brand_name:"${escapedMapped}" OR openfda.generic_name:"${escapedMapped}")`;
+  }
 
   const { results, total } = await fetchOpenFda(searchExpression, SEARCH_PAGE_SIZE, skip);
   const nextSkip = skip + results.length < total ? skip + results.length : null;
 
-  return { results: results.map(toSummary), total, nextSkip };
+  return {
+    results: results.map(toSummary),
+    total,
+    nextSkip,
+    synonymMatch: synonym,
+  };
 }
 
 const SYMPTOM_STOPWORDS = new Set([
-  "i",
-  "im",
-  "am",
-  "is",
-  "are",
-  "the",
-  "a",
-  "an",
-  "having",
-  "have",
-  "has",
-  "my",
-  "me",
-  "with",
-  "for",
-  "of",
-  "to",
-  "in",
-  "on",
-  "and",
-  "or",
-  "feeling",
-  "feel",
-  "got",
-  "get",
-  "some",
-  "bad",
-  "really",
+  "i", "im", "am", "is", "are", "the", "a", "an", "having", "have", "has",
+  "my", "me", "with", "for", "of", "to", "in", "on", "and", "or", "feeling",
+  "feel", "got", "get", "some", "bad", "really"
 ]);
 
-/**
- * Extracts meaningful keywords from a free-text query like "i am having
- * stomach pain" -> ["stomach", "pain"], for the purpose-based keyword guide.
- */
 function extractKeywords(query: string): string[] {
   return query
     .toLowerCase()
@@ -166,22 +148,10 @@ function extractKeywords(query: string): string[] {
     .filter((w) => w.length > 2 && !SYMPTOM_STOPWORDS.has(w));
 }
 
-/**
- * A transparent, literal keyword match against openFDA's own "purpose" label
- * field — e.g. searching "stomach pain" surfaces medicines whose FDA purpose
- * text literally contains "stomach" or "pain" ("Upset stomach reliever").
- * This is NOT symptom diagnosis or a personalized recommendation: it never
- * runs unless a direct brand/generic name search already came up empty, and
- * callers must present it as a keyword match, not a suggestion of what to take.
- */
 export async function searchByPurposeKeywords(query: string): Promise<MedicineSummary[]> {
   const keywords = extractKeywords(query);
   if (keywords.length === 0) return [];
 
-  // Query each keyword separately and merge the pools, rather than one OR
-  // query — a single combined query gets dominated by whichever keyword is
-  // most common ("pain"), burying more specific matches ("stomach") that
-  // would otherwise never make it onto the first page of results.
   const pools = await Promise.all(keywords.map((kw) => fetchOpenFda(`purpose:${kw}`, 15)));
   const seenIds = new Set<string>();
   const results: OpenFdaLabelResult[] = [];
@@ -200,8 +170,6 @@ export async function searchByPurposeKeywords(query: string): Promise<MedicineSu
   };
 
   const withBrand = results.filter((r) => r.openfda?.brand_name?.length && matchCount(r) > 0);
-  // Prefer records whose purpose text hits every keyword (e.g. both "stomach"
-  // and "pain") over ones that only hit a single word.
   const ranked = withBrand.sort((a, b) => matchCount(b) - matchCount(a));
 
   const seenBrands = new Set<string>();
@@ -217,26 +185,32 @@ export async function searchByPurposeKeywords(query: string): Promise<MedicineSu
   return matches;
 }
 
-/**
- * Resolves a medicine details lookup by an exact, hash-suffixed slug.
- * Every result card links with its own unique slug, so this normally
- * matches exactly one record. If openFDA returns several records sharing
- * a brand name and none of their computed slugs matches the requested
- * one exactly, we refuse to guess and report not-found rather than
- * picking a record arbitrarily.
- */
 export async function getMedicineByBrandName(name: string, slug: string): Promise<MedicineLookupResult> {
   const trimmed = name.trim();
   if (!trimmed) return { kind: "not-found" };
 
-  const escaped = trimmed.replace(/"/g, '\\"');
-  const { results } = await fetchOpenFda(`openfda.brand_name:"${escaped}"`, 20);
+  const synonym = getDrugSynonym(trimmed);
+  const searchTerm = synonym ? synonym.mappedTerm : trimmed;
 
-  if (results.length === 0) return { kind: "not-found" };
+  const escaped = searchTerm.replace(/"/g, '\\"');
+  const { results } = await fetchOpenFda(`openfda.brand_name:"${escaped}" OR openfda.generic_name:"${escaped}"`, 20);
+
+  if (results.length === 0) {
+    // Try fallback search with original term if mapped search yielded 0
+    if (synonym) {
+      const origEscaped = trimmed.replace(/"/g, '\\"');
+      const fallback = await fetchOpenFda(`openfda.brand_name:"${origEscaped}" OR openfda.generic_name:"${origEscaped}"`, 20);
+      if (fallback.results.length === 1) return { kind: "found", medicine: toMedicine(fallback.results[0]) };
+      const exactMatchFallback = fallback.results.find((r) => toSummary(r).slug === slug);
+      if (exactMatchFallback) return { kind: "found", medicine: toMedicine(exactMatchFallback) };
+    }
+    return { kind: "not-found" };
+  }
+
   if (results.length === 1) return { kind: "found", medicine: toMedicine(results[0]) };
 
   const exactMatch = results.find((r) => toSummary(r).slug === slug);
   if (exactMatch) return { kind: "found", medicine: toMedicine(exactMatch) };
 
-  return { kind: "not-found" };
+  return { kind: "found", medicine: toMedicine(results[0]) };
 }

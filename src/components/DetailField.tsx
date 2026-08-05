@@ -1,16 +1,8 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, AlertTriangle, Info, ShieldAlert } from "lucide-react";
 
 const HEADING_LINE = /^[A-Z][A-Za-z0-9À-ÿ ,'’-]{2,70}:$|^(Do not use|Ask a doctor.*|Stop use.*|Keep out of reach.*|If pregnant.*)$/;
 const PREVIEW_LENGTH = 64;
 
-/**
- * Splits a paragraph into a short clickable summary + full body. Prefers a
- * real heading (openFDA's own sub-heading text, e.g. "Sore throat warning:")
- * when the cleanup pass found one; otherwise falls back to a truncated
- * preview of the paragraph itself. Every paragraph gets *some* summary/body
- * split, so every accordion row looks and behaves the same way — no mix of
- * "some rows are dropdowns, some aren't" for the reader to puzzle over.
- */
 function splitForAccordion(paragraph: string): { summary: string; body: string } {
   const [firstLine, ...rest] = paragraph.split(/(?<=:)\s/);
   if (HEADING_LINE.test(firstLine.trim()) && rest.length > 0) {
@@ -36,10 +28,6 @@ export function DetailField({
   label: string;
   value?: string;
   unavailableText: string;
-  /** Render every paragraph as an individually-expandable row with a short
-   *  preview line — keeps long sections (e.g. Warnings) scannable without
-   *  dumping all body text on screen, while staying visually consistent
-   *  (every row behaves the same way, no mix of plain vs. collapsible text). */
   accordion?: boolean;
 }) {
   const paragraphs = value ? value.split(/\n\n+/).filter(Boolean) : [];
@@ -47,45 +35,64 @@ export function DetailField({
   return (
     <section
       id={id}
-      className="scroll-mt-28 border-t border-slate-100 py-4 first:border-t-0 first:pt-0 dark:border-slate-800"
+      className="scroll-mt-28 border-t border-slate-100 py-5 first:border-t-0 first:pt-0 dark:border-slate-800"
     >
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-        {label}
-      </h2>
+      <div className="flex items-center gap-2 mb-3">
+        {accordion ? (
+          <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        ) : (
+          <Info className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+        )}
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          {label}
+        </h2>
+      </div>
+
       {paragraphs.length > 0 ? (
         accordion ? (
-          <div className="mt-1.5 flex flex-col">
+          <div className="flex flex-col gap-2">
             {paragraphs.map((p, i) => {
               const { summary, body } = splitForAccordion(p);
+              const isLiverOrSevere =
+                p.toLowerCase().includes("liver") || p.toLowerCase().includes("allergy");
+
               return (
                 <details
                   key={i}
-                  className="group border-b border-slate-100 py-2.5 last:border-b-0 dark:border-slate-800"
+                  className="group overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 transition-colors dark:border-slate-800 dark:bg-slate-900/50"
                 >
-                  <summary className="flex cursor-pointer list-none items-start justify-between gap-2 font-semibold text-slate-900 marker:content-none dark:text-white">
-                    <span>{summary}</span>
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3.5 font-semibold text-slate-900 marker:content-none hover:bg-slate-100/60 dark:text-white dark:hover:bg-slate-800/60">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {isLiverOrSevere && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-900 dark:bg-amber-950/80 dark:text-amber-300">
+                          <AlertTriangle className="h-3 w-3" />
+                          Caution
+                        </span>
+                      )}
+                      <span className="truncate text-sm font-semibold">{summary}</span>
+                    </div>
                     <ChevronDown
-                      className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-400 transition-transform group-open:rotate-180"
+                      className="h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 group-open:rotate-180"
                       aria-hidden
                     />
                   </summary>
-                  <p className="mt-1.5 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                  <div className="border-t border-slate-100 bg-white p-4 text-sm leading-relaxed text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
                     {body}
-                  </p>
+                  </div>
                 </details>
               );
             })}
           </div>
         ) : (
-          <div className="mt-1.5 flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {paragraphs.map((p, i) => {
               const [firstLine, ...rest] = p.split(/(?<=:)\s/);
               const isHeading = HEADING_LINE.test(firstLine.trim()) && rest.length > 0;
               return (
-                <p key={i} className="text-base leading-relaxed text-slate-800 dark:text-slate-200">
+                <p key={i} className="text-sm leading-relaxed text-slate-800 dark:text-slate-200">
                   {isHeading ? (
                     <>
-                      <span className="font-semibold text-slate-900 dark:text-white">{firstLine} </span>
+                      <span className="font-bold text-slate-900 dark:text-white">{firstLine} </span>
                       {rest.join(" ")}
                     </>
                   ) : (
@@ -97,8 +104,8 @@ export function DetailField({
           </div>
         )
       ) : (
-        <p className="mt-1.5 text-base leading-relaxed text-slate-800 dark:text-slate-200">
-          <span className="italic text-slate-400 dark:text-slate-500">{unavailableText}</span>
+        <p className="text-sm leading-relaxed text-slate-500 italic dark:text-slate-400">
+          {unavailableText}
         </p>
       )}
     </section>
