@@ -64,31 +64,26 @@ export function HomeSearch() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-gradient-to-b from-teal-950 via-slate-950 to-slate-900 px-4 pb-12 pt-16 text-white sm:px-6">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(20,184,166,0.15),transparent_50%)] pointer-events-none" />
-        <div className="mx-auto max-w-3xl relative z-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-teal-800/60 bg-teal-950/60 px-3 py-1 text-xs font-semibold text-teal-300 backdrop-blur-md mb-4">
-            <HeartPulse className="h-3.5 w-3.5 text-teal-400" />
-            <span>Trusted FDA Drug Information for Patients</span>
+      <section className="bg-slate-900 border-b border-slate-800 px-4 pb-12 pt-12 text-white sm:px-6">
+        <div className="mx-auto max-w-3xl">
+          <div className="flex items-center gap-2 text-xs font-medium text-teal-400 mb-3">
+            <span className="h-2 w-2 rounded-full bg-teal-400"></span>
+            <span>Official openFDA Database</span>
           </div>
 
-          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
-            Know what you&apos;re <span className="bg-gradient-to-r from-teal-400 to-emerald-400 bg-clip-text text-transparent">taking.</span>
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">
+            Search Medicine Labels & Dosage Guide
           </h1>
-          <p className="mt-3 max-w-lg text-sm sm:text-base text-slate-300 leading-relaxed">
-            Search any medicine by brand name (e.g. <span className="text-teal-300 font-semibold">Dolo 650</span>) or generic name (e.g. <span className="text-teal-300 font-semibold">Paracetamol</span>) and inspect verified FDA label info in clear terms.
+          <p className="mt-2.5 max-w-xl text-sm sm:text-base text-slate-300 leading-relaxed">
+            Search any medicine by brand name (e.g. <span className="text-white font-medium">Dolo 650</span>) or generic term (e.g. <span className="text-white font-medium">Paracetamol</span>) to view active ingredients, directions, and safety warnings.
           </p>
 
-          <div className="mt-8 max-w-2xl">
+          <div className="mt-6 max-w-2xl">
             <SearchBar value={inputValue} onChange={setInputValue} />
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
             <PopularSearches onPick={pick} variant="dark" />
-            <span className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
-              <ShieldCheck className="h-4 w-4 text-emerald-400" aria-hidden />
-              FDA Live API · Indian Synonym Mapper
-            </span>
           </div>
         </div>
       </section>

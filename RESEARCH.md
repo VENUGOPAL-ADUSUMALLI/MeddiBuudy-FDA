@@ -124,5 +124,5 @@ src/
 | **SEO Strategy** | JSON-LD `schema.org/Drug` & `BreadcrumbList` schemas, OpenGraph preview cards, Twitter cards, dynamic metadata, canonical tags. |
 | **Indian Audience Focus** | `lib/synonyms.ts` mapper translating Paracetamol, Dolo, Meftal, Crocin to openFDA terms with an Indian Healthcare Context banner. |
 | **State Handling** | Skeleton shimmers, rich empty states with popular Indian brand chips, purpose-keyword fallback guide, retry-capable error banners. |
-| **Trust Elements** | Verified openFDA source badge, NDC tracking, persistent safety disclaimers, National Poison Helpline (108 / 1800-11-6117). |
+| **Trust Elements** | Verified openFDA source badge, NDC tracking, persistent safety disclaimers, openFDA database verification. |
 | **Product Thinking** | Patient guide print action, native Web Share API support, non-prescriptive purpose matching, collision-safe URL slugging. |

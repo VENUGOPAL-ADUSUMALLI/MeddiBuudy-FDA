@@ -141,33 +141,33 @@ export default async function MedicineDetailsPage({ params, searchParams }: Page
         {/* Indian User Context Banner */}
         {synonym && <IndianContextBanner synonym={synonym} />}
 
-        {/* Hero Card Header */}
-        <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-slate-50/50 to-teal-50/30 p-6 shadow-xs dark:border-slate-800 dark:from-slate-900 dark:via-slate-900/80 dark:to-teal-950/20 mb-6">
+        {/* Medicine Details Header */}
+        <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 mb-6">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-600 text-white shadow-xs dark:bg-teal-500">
-              <Pill className="h-6 w-6 rotate-45" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-950/80 dark:text-teal-400">
+              <Pill className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
                   {medicine.brandName}
                 </h1>
                 {medicine.dosageForm && (
-                  <span className="rounded-full bg-teal-100 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-teal-800 dark:bg-teal-900/80 dark:text-teal-200">
+                  <span className="rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                     {medicine.dosageForm}
                   </span>
                 )}
               </div>
 
               {medicine.genericName && (
-                <p className="mt-1 text-base font-semibold text-teal-700 dark:text-teal-400">
-                  Generic: {medicine.genericName}
+                <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+                  <span className="text-slate-500 font-normal">Generic Name:</span> {medicine.genericName}
                 </p>
               )}
 
               {medicine.manufacturer && (
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Manufactured by: <strong className="text-slate-700 dark:text-slate-300">{medicine.manufacturer}</strong>
+                  Manufacturer: <span className="font-medium text-slate-700 dark:text-slate-300">{medicine.manufacturer}</span>
                 </p>
               )}
             </div>
