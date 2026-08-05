@@ -3,13 +3,12 @@ export function Disclaimer() {
     <div
       role="note"
       aria-label="Medical disclaimer"
-      className="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 py-3 pl-4 pr-4 dark:bg-amber-950/20"
+      className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400"
     >
-      <p className="text-sm leading-relaxed text-amber-900 dark:text-amber-300">
-        <span className="font-semibold">Not medical advice.</span> This information is sourced from the
-        FDA drug label and is provided for reference only. Always consult a doctor or pharmacist before
-        taking any medicine.
+      <p>
+        <span className="font-semibold text-slate-900 dark:text-white">Medical Disclaimer:</span> This directory displays official drug label information sourced from openFDA for informational and educational reference only. It is not medical advice. Always consult a qualified healthcare professional or physician regarding prescriptions, dosages, or medical conditions.
       </p>
     </div>
   );
 }
+

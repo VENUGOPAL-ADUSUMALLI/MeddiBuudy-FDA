@@ -176,14 +176,14 @@ export default async function MedicineDetailsPage({ params, searchParams }: Page
 
         <QuickJumpNav />
 
-        <div className="flex flex-col gap-6 py-4">
-          {/* Active Ingredients & Purpose Grid */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div id="ingredients" className="scroll-mt-28 rounded-xl border border-slate-200 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="flex flex-col gap-6 py-6">
+          {/* Active Ingredients & Purpose */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div id="ingredients" className="scroll-mt-24">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Active Ingredients
               </h2>
-              <p className="mt-2 text-sm leading-relaxed font-medium text-slate-800 dark:text-slate-200">
+              <p className="mt-2 text-sm leading-relaxed text-slate-800 dark:text-slate-200">
                 {medicine.activeIngredients || (
                   <span className="italic text-slate-400 dark:text-slate-500">
                     Active ingredient information is not available.
@@ -192,11 +192,11 @@ export default async function MedicineDetailsPage({ params, searchParams }: Page
               </p>
             </div>
 
-            <div id="purpose" className="scroll-mt-28 rounded-xl border border-slate-200 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <div id="purpose" className="scroll-mt-24">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Primary Purpose
               </h2>
-              <p className="mt-2 text-sm leading-relaxed font-medium text-slate-800 dark:text-slate-200">
+              <p className="mt-2 text-sm leading-relaxed text-slate-800 dark:text-slate-200">
                 {medicine.purpose || (
                   <span className="italic text-slate-400 dark:text-slate-500">
                     Purpose information is not available.
@@ -207,7 +207,7 @@ export default async function MedicineDetailsPage({ params, searchParams }: Page
           </div>
 
           {/* Dosage & Accordion Warnings */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+          <div className="space-y-6">
             <DetailField
               id="dosage"
               label="Dosage & Directions"
@@ -223,8 +223,10 @@ export default async function MedicineDetailsPage({ params, searchParams }: Page
             />
           </div>
 
-          {/* Verified Source & Helpline Badge */}
-          <TrustVerificationBadge manufacturer={medicine.manufacturer} productNdc={medicine.productNdc} />
+          {/* Verified Source Badge */}
+          <div className="pt-2">
+            <TrustVerificationBadge manufacturer={medicine.manufacturer} productNdc={medicine.productNdc} />
+          </div>
 
           {/* Health Disclaimer */}
           <Disclaimer />
